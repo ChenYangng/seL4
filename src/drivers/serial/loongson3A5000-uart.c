@@ -27,7 +27,7 @@
 #ifdef CONFIG_PRINTING
 void uart_drv_putchar(unsigned char c)
 {
-    while(!(*UART_REG(UART_REG_LSR) & UART_REG_LSR_TFE));
+    /* while(!(*UART_REG(UART_REG_LSR) & UART_REG_LSR_TFE)); */
     *UART_REG(UART_REG_DAT) = (c & 0xff);
 }
 #endif /* CONFIG_PRINTING */
