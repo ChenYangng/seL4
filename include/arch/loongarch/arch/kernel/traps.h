@@ -50,13 +50,19 @@ VISIBLE NORETURN;
 void c_handle_fastpath_call(word_t cptr, word_t msgInfo)
 VISIBLE NORETURN;
 
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+void c_handle_vcpu_fault(word_t ecode)
+VISIBLE NORETURN;
+
+#endif
+
 void c_handle_syscall(word_t cptr, word_t msgInfo, syscall_t syscall)
 VISIBLE NORETURN;
 
 void c_handle_interrupt(void)
 VISIBLE NORETURN;
 
-void c_handle_exception(void)
+void c_handle_exception(word_t ecode)
 VISIBLE NORETURN;
 
 void restore_user_context(void)

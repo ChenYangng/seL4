@@ -20,59 +20,60 @@
 
 enum _register {
 
-    ra=0,LR=0,
-    tp=1,TP=1,TLS_BASE=1,
-    sp=2,SP=2,
+    ra=1,LR=1,
+    tp=2,TP=2,TLS_BASE=2,
+    sp=3,SP=3,
 
-    a0=3, capRegister = 3, badgeRegister = 3,
-    a1=4, msgInfoRegister=4,
-    a2=5,
-    a3=6,
-    a4=7,
-    a5=8,
-    a6=9,
+    a0=4, capRegister = 4, badgeRegister = 4,
+    a1=5, msgInfoRegister=5,
+    a2=6,
+    a3=7,
+    a4=8,
+    a5=9,
+    a6=10,
 #ifdef CONFIG_KERNEL_MCS
     replyRegister = 9,
 #endif
-    a7=10,
+    a7=11,
 
-    t0=11,
+    t0=12,
 #ifdef CONFIG_KERNEL_MCS
     nbsendRecvDest = 11,
 #endif
-    t1=12,
-    t2=13,
-    t3=14,
-    t4=15,
-    t5=16,
-    t6=17,
-    t7=18,
-    t8=19,
+    t1=13,
+    t2=14,
+    t3=15,
+    t4=16,
+    t5=17,
+    t6=18,
+    t7=19,
+    t8=20,
 
-    r21=20,
+    r21=21,
 
-    s0=21,
-    s1=22,
-    s2=23,
-    s3=24,
-    s4=25,
-    s5=26,
-    s6=27,
-    s7=28,
-    s8=29,
-    fp=30,
+    fp=22,
+    s0=23,
+    s1=24,
+    s2=25,
+    s3=26,
+    s4=27,
+    s5=28,
+    s6=29,
+    s7=30,
+    s8=31,
 
     /* End of GP registers, the following are additional kernel-saved state. */
 
-    csr_era=31,FaultIP=31,
-    csr_badvaddr=32,
-    csr_prmd=33,
-    csr_euen=34,
-    csr_ecfg=35,
+    csr_era=32,FaultIP=32,
+    csr_badvaddr=33,
+    csr_prmd=34,
+    csr_euen=35,
+    csr_ecfg=36,
+    csr_badi=37,
 
-    NextIP=36,
+    NextIP=38,
 
-    n_contextRegisters = 37
+    n_contextRegisters = 39
 };
 
 typedef uint8_t register_t;

@@ -76,6 +76,16 @@ block UserException {
    field seL4_FaultType 4
 }
 
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+block VCPUFault {
+    padding 640
+    padding 32
+    field ECODE 32
+    padding 60
+    field seL4_FaultType 4
+}
+#endif
+
 #ifdef CONFIG_KERNEL_MCS
 block Timeout {
     padding 576

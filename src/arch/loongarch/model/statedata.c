@@ -10,24 +10,31 @@
  * SPDX-License-Identifier: GPL-2.0-only
  */
 
-#include <util.h>
 #include <api/types.h>
-#include <arch/types.h>
 #include <arch/model/statedata.h>
 #include <arch/object/structures.h>
+#include <arch/types.h>
 #include <linker.h>
 #include <plat/machine/hardware.h>
+#include <util.h>
 
 /* The top level asid mapping table */
 asid_pool_t *loongarchKSASIDTable[BIT(asidHighBits)];
 
 /* Kernel Page Tables */
 pte_t kernel_l1pt[BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
-pte_t kernel_l2pt[BIT(PT_INDEX_BITS)][BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
-// pte_t kernel_l3pt[4096 * BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
+pte_t kernel_l2pt[BIT(PT_INDEX_BITS)][BIT(PT_INDEX_BITS)] ALIGN_BSS(
+    BIT(seL4_PageTableBits));
+// pte_t kernel_l3pt[4096 * BIT(PT_INDEX_BITS)]
+// ALIGN_BSS(BIT(seL4_PageTableBits));
 
 pte_t kernel_image_pt[BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
 pte_t kernel_devices_pt[BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
+
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+UP_STATE_DEFINE(vcpu_t, *loongarchHSCurVCPU);
+UP_STATE_DEFINE(bool_t, loongarchHSVCPUActive);
+#endif
 
 /*
 SMP_STATE_DEFINE(core_map_t, coreMap);

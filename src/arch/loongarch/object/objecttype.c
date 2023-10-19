@@ -188,6 +188,10 @@ word_t Arch_getObjectSize(word_t t)
     case seL4_LOONGARCH_Tera_Page:
         return seL4_TeraPageBits;
 #endif
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    case seL4_LOONGARCH_VCPUObject:
+        return seL4_VCPUBits;
+#endif
     default:
         fail("Invalid object type");
         return 0;
@@ -280,6 +284,13 @@ cap_t Arch_createObject(object_t t, void *regionBase, word_t userSize, bool_t
                    0,                      /* capPTIsMapped      */
                    0                       /* capPTMappedAddress */
                );
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    case seL4_LOONGARCH_VCPUObject:
+        /** AUXUPD: "(True, ptr_retyp
+          (Ptr (ptr_val \<acute>regionBase) :: vcpu_C ptr))" */
+        // vcpu_init(VCPU_PTR(regionBase));
+        return cap_vcpu_cap_new(VCPU_REF(regionBase));
+#endif
 
     default:
         /*
@@ -301,6 +312,11 @@ exception_t Arch_decodeInvocation(
     word_t *buffer
 )
 {
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    if (cap_get_capType(cap) == cap_vcpu_cap) {
+        return decodeLOONGARCHVCPUInvocation(label, length, cptr, slot, cap, call, buffer);
+    }
+#endif
     return decodeLOONGARCHMMUInvocation(label, length, cptr, slot, cap, buffer);
 }
 

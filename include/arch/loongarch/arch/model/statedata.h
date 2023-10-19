@@ -18,6 +18,7 @@
 #include <util.h>
 #include <model/statedata.h>
 #include <object/structures.h>
+#include <arch/object/vcpu.h>
 #include <arch/types.h>
 
 
@@ -25,18 +26,24 @@ NODE_STATE_BEGIN(archNodeState)
 /* TODO: add Loongarch-dependent fields here */
 /* Bitmask of all cores should receive the reschedule IPI */
 NODE_STATE_DECLARE(word_t, ipiReschedulePending);
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+NODE_STATE_DECLARE(vcpu_t, *loongarchHSCurVCPU);
+NODE_STATE_DECLARE(bool_t, loongarchHSVCPUActive);
 NODE_STATE_END(archNodeState);
+#endif
 
 extern asid_pool_t *loongarchKSASIDTable[BIT(asidHighBits)];
 
 /* Kernel Page Tables */
 extern pte_t kernel_l1pt[BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
-extern pte_t kernel_l2pt[BIT(PT_INDEX_BITS)][BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
+extern pte_t kernel_l2pt[BIT(PT_INDEX_BITS)][BIT(PT_INDEX_BITS)] ALIGN_BSS(
+    BIT(seL4_PageTableBits));
 
-extern pte_t kernel_image_pt[BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
-extern pte_t kernel_devices_pt[BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
+extern pte_t
+    kernel_image_pt[BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
+extern pte_t
+    kernel_devices_pt[BIT(PT_INDEX_BITS)] ALIGN_BSS(BIT(seL4_PageTableBits));
 
 // #elif defined(CONFIG_KERNEL_LOG_BUFFER)
 // extern pte_t kernel_image_level2_log_buffer_pt[BIT(PT_INDEX_BITS)];
-//#endif
-
+// #endif

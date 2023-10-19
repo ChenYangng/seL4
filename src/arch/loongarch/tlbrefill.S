@@ -25,6 +25,7 @@ handle_tlb_refill:
 	ldpte	$t0, 0
 	ldpte	$t0, 1
 	tlbfill
+    csrrd   $t0, LOONGARCH_CSR_ASID
 	csrrd   $t0, LOONGARCH_CSR_TLBREHI
 	csrrd   $t0, LOONGARCH_CSR_TLBRELO0
 	csrrd   $t0, LOONGARCH_CSR_TLBRELO1
@@ -36,4 +37,3 @@ refill_unmap:
 	tlbfill
 	csrrd	$t0, LOONGARCH_CSR_TLBRSAVE
 	ertn
-	

@@ -57,20 +57,28 @@
 #define PTE_L2_PA(PT_BASE) (word_t)(((PT_BASE) >> LOONGARCH_L2PGSHIFT) << LOONGARCH_L2PGSHIFT)
 #define PTE_L1_PA(PT_BASE) (word_t)(((PT_BASE) >> LOONGARCH_L1PGSHIFT) << LOONGARCH_L1PGSHIFT)
 #define PTE_GSRWXV 0x3D3
+#define PTE_GSRWXV_UNCACHED 0x3C3
 #define PTE_H_GSRWXV 0x13D3
-#define PTE_H_GSRWXV_UNCACHE_PLV0 0x13C3
-// #define PTE_H_GSRWXV_UNCACHE_PLV3 0x13CF
+#define PTE_H_GSRWXV_UNCACHE 0x13C3
+
 #define PTE_USER_GSRWXV 0x39F
+#define PTE_USER_GSRWXV_UNCACHED 0x38F
 #define PTE_H_USER_GSRWXV 0x139F
-// #define PTE_H_USER_GSRWXV 0x138F //maybe let all uncache?
+#define PTE_H_USER_GSRWXV_UNCACHED 0x138F
 
 #define PTE_CREATE_NEXT(PT_BASE) (word_t)PT_BASE
 #define PTE_CREATE_L3_LEAF(PT_BASE) (word_t)(PTE_L3_PA(PT_BASE) | PTE_GSRWXV)
 #define PTE_CREATE_L2_LEAF(PT_BASE) (word_t)(PTE_L2_PA(PT_BASE) | PTE_H_GSRWXV)
 #define PTE_CREATE_L1_LEAF(PT_BASE) (word_t)(PTE_L1_PA(PT_BASE) | PTE_H_GSRWXV)
+#define PTE_CREATE_L3_LEAF_UNCACHED(PT_BASE) (word_t)(PTE_L3_PA(PT_BASE) | PTE_GSRWXV_UNCACHED)
+#define PTE_CREATE_L2_LEAF_UNCACHED(PT_BASE) (word_t)(PTE_L2_PA(PT_BASE) | PTE_H_GSRWXV_UNCACHE)
+#define PTE_CREATE_L1_LEAF_UNCACHED(PT_BASE) (word_t)(PTE_L1_PA(PT_BASE) | PTE_H_GSRWXV_UNCACHE)
 #define USER_PTE_CREATE_L3_LEAF(PT_BASE) (word_t)(PTE_L3_PA(PT_BASE) | PTE_USER_GSRWXV)
 #define USER_PTE_CREATE_L2_LEAF(PT_BASE) (word_t)(PTE_L2_PA(PT_BASE) | PTE_H_USER_GSRWXV)
 #define USER_PTE_CREATE_L1_LEAF(PT_BASE) (word_t)(PTE_L1_PA(PT_BASE) | PTE_H_USER_GSRWXV)
+#define USER_PTE_CREATE_L3_LEAF_UNCACHED(PT_BASE) (word_t)(PTE_L3_PA(PT_BASE) | PTE_USER_GSRWXV_UNCACHED)
+#define USER_PTE_CREATE_L2_LEAF_UNCACHED(PT_BASE) (word_t)(PTE_L2_PA(PT_BASE) | PTE_H_USER_GSRWXV_UNCACHED)
+#define USER_PTE_CREATE_L1_LEAF_UNCACHED(PT_BASE) (word_t)(PTE_L1_PA(PT_BASE) | PTE_H_USER_GSRWXV_UNCACHED)
 
 /* Extract the n-level PT index from a virtual address. This works for any
  * configured Loongarch system with CONFIG_PT_LEVEL
@@ -141,16 +149,16 @@
  * Ecode, you need to check EsubCode for details.
  */
 enum vm_fault_type {
-    LALoadPageInvalid=1, //PIL
-    LAStorePageInvalid=2,//PIS
-    LAFetchPageInvalid=3,//PIF
-    LAPageModException=4,//PME
-    LAPageNoReadable=5,     //PNR
-    LAPageNoExecutable=6,   //PNX
-    LAPagePrivilegeIllegal=7,   //PPI
-    LAAddrError=8,//ADEF or ADEM         /*Check EsubCode for details*/
-    LAAddrAlignFault=9,//ALE
-    LABoundCheck=10    //BCE
+    LALoadPageInvalid = 1, //PIL
+    LAStorePageInvalid = 2,//PIS
+    LAFetchPageInvalid = 3,//PIF
+    LAPageModException = 4,//PME
+    LAPageNoReadable = 5,     //PNR
+    LAPageNoExecutable = 6,   //PNX
+    LAPagePrivilegeIllegal = 7,   //PPI
+    LAAddrError = 8,//ADEF or ADEM         /*Check EsubCode for details*/
+    LAAddrAlignFault = 9,//ALE
+    LABoundCheck = 10    //BCE
 
     //other exceptions are not related to vm_fault, which will be recorded in badv
     /* >=25 reserved*/

@@ -526,6 +526,9 @@ cap_t createObject(object_t t, void *regionBase, word_t userSize, bool_t deviceM
         /* Setup non-zero parts of the TCB. */
 
         Arch_initContext(&tcb->tcbArch.tcbContext);
+#ifdef CONFIG_ARCH_LOONGARCH
+        tcb->tcbArch.tcbVCPU = NULL;
+#endif
 #ifndef CONFIG_KERNEL_MCS
         tcb->tcbTimeSlice = CONFIG_TIME_SLICE;
 #endif

@@ -318,6 +318,88 @@
             </error>
         </method>
     </interface>
+    <interface name="seL4_LOONGARCH_VCPU" manual_name="VCPU"
+        cap_description="Capability to the VCPU being operated on.">
+        <method id="LOONGARCHVCPUSetTCB" name="SetTCB" manual_name="Set TCB">
+            <condition><config var="CONFIG_LOONGARCH_HYPERVISOR_SUPPORT"/></condition>
+            <brief>
+                Bind a TCB to a virtual CPU
+            </brief>
+             <description>
+                 There is a 1:1 relationship between a virtual CPU and a TCB. If either (or both) of them is
+                 associated with another one, they will be dissociated, and then associated to the
+                 ones called in this system calls.
+             </description>
+            <param dir="in" name="tcb" type="seL4_TCB"
+            description="Capability to TCB to bind to a virtual CPU"/>
+            <error name="seL4_IllegalOperation">
+                <description>
+                    The <texttt text="_service"/> or <texttt text="tcb"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+            <error name="seL4_InvalidCapability">
+                <description>
+                    The <texttt text="_service"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+        </method>
+        <method id="LOONGARCHVCPUReadReg" name="ReadRegs" manual_name="Read Registers">
+            <condition><config var="CONFIG_LOONGARCH_HYPERVISOR_SUPPORT"/></condition>
+            <brief>
+                Read a virtual CPU register
+            </brief>
+            <description>
+                TODO
+            </description>
+            <param dir="in" name="field" type="seL4_Word"
+            description="Register to read from a VCPU"/>
+            <param dir="out" name="value" type="seL4_Word"
+            description="Returned value of the VCPU register"/>
+            <error name="seL4_IllegalOperation">
+                <description>
+                    The <texttt text="_service"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+            <error name="seL4_InvalidArgument">
+                <description>
+                    The <texttt text="field"/> is invalid.
+                </description>
+            </error>
+            <error name="seL4_InvalidCapability">
+                <description>
+                    The <texttt text="_service"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+        </method>
+        <method id="LOONGARCHVCPUWriteReg" name="WriteRegs" manual_name="Write Registers">
+            <condition><config var="CONFIG_LOONGARCH_HYPERVISOR_SUPPORT"/></condition>
+            <brief>
+                Write a virtual CPU register
+            </brief>
+            <description>
+                TODO
+            </description>
+            <param dir="in" name="field" type="seL4_Word"
+            description="Register ID to write to a VCPU"/>
+            <param dir="in" name="value" type="seL4_Word"
+            description="Value to be written to the VCPU register"/>
+            <error name="seL4_IllegalOperation">
+                <description>
+                    The <texttt text="_service"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+            <error name="seL4_InvalidArgument">
+                <description>
+                    The <texttt text="field"/> is invalid.
+                </description>
+            </error>
+            <error name="seL4_InvalidCapability">
+                <description>
+                    The <texttt text="_service"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+        </method>
+    </interface>
     <interface name="seL4_IRQControl" manual_name="IRQ Control" cap_description="An IRQControl capability. This gives you the authority to make this call.">
 
        <method id="LOONGARCHIRQIssueIRQHandlerTrigger" name="GetTrigger" manual_name="GetTrigger"

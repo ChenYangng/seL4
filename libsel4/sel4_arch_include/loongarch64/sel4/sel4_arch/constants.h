@@ -41,7 +41,8 @@
 #define seL4_LargePageBits     25
 #define seL4_HugePageBits      36
 #define seL4_PageTableBits     14
-#define seL4_VSpaceBits        seL4_PageTableBits
+#define seL4_PageDirBits       seL4_PageTableBits 
+#define seL4_VSpaceBits        seL4_PageDirBits
 
 #define seL4_NumASIDPoolsBits   5
 #define seL4_ASIDPoolIndexBits  11
@@ -51,6 +52,9 @@
 #define seL4_MinUntypedBits     4
 #define seL4_MaxUntypedBits     46
 #ifndef __ASSEMBLER__
+
+#define seL4_LOONGARCH_VCPUBits   14
+#define seL4_VCPUBits       14
 
 typedef enum {
     seL4_VMFault_IP,
@@ -82,6 +86,11 @@ typedef enum {
     seL4_UserException_Code,
     seL4_UserException_Length,
 } seL4_UserException_Msg;
+
+typedef enum {
+    seL4_VCPUReg_GID = 0,
+    seL4_VCPUReg_Num
+} seL4_VCPUReg;
 
 #ifdef CONFIG_KERNEL_MCS
 typedef enum {

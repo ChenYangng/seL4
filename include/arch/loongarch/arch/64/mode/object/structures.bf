@@ -67,6 +67,16 @@ block asid_pool_cap {
     field_high capASIDPool          37
 }
 
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+block vcpu_cap {
+    padding                         64
+
+    field      capType              5
+    field_high capVCPUPtr           48
+    padding                         11
+}
+#endif
+
 -- NB: odd numbers are arch caps (see isArchCap())
 tagged_union cap capType {
     -- 5-bit tag caps
@@ -91,6 +101,10 @@ tagged_union cap capType {
     tag page_table_cap      3
     tag asid_control_cap    11
     tag asid_pool_cap       13
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    tag vcpu_cap            15
+#endif
+
 }
 
 ---- Arch-independent object types
@@ -105,6 +119,15 @@ block VMFault {
     padding                     15
     field     seL4_FaultType    4
 }
+
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+block VCPUFault {
+    padding         64
+    field hsr       32
+    padding         28
+    field seL4_FaultType  4
+}
+#endif
 
 -- VM attributes
 

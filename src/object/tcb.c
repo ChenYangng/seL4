@@ -1775,6 +1775,9 @@ exception_t invokeTCB_ThreadControl(tcb_t *target, cte_t *slot,
                                     cte_t *bufferSrcSlot,
                                     thread_control_flag_t updateFlags)
 {
+#ifdef CONFIG_ARCH_LOONGARCH
+        target->tcbArch.tcbVCPU = NULL;
+#endif
     exception_t e;
     cap_t tCap = cap_thread_cap_new((word_t)target);
 

@@ -25,6 +25,15 @@ config_option(
     DEFAULT OFF
     DEPENDS "KernelArchLoongarch"
 )
+
+config_option(
+    KernelLoongarchHypervisorSupport LOONGARCH_HYPERVISOR_SUPPORT
+    "Build as Hypervisor. Utilise LoongArch virtualisation extensions to build the kernel as a hypervisor"
+    DEFAULT OFF 
+    DEPENDS
+    "KernelPlatform3A5000"
+)
+
 if(KernelWordSize EQUAL 64)
     set(KernelClz64 ON CACHE BOOL "")
     set(KernelCtz64 ON CACHE BOOL "")
@@ -72,8 +81,9 @@ add_sources(
         object/interrupt.c
         object/objecttype.c
         object/tcb.c
+        object/vcpu.c
         smp/ipi.c
-    ASMFILES head.S traps.S tlbex.S tlbrefill.S
+    ASMFILES head.S traps.S tlbex.S tlbrefill.S hyp_entry.S
 )
 
 add_bf_source_old("KernelArchLoongarch" "structures.bf" "include/arch/loongarch" "arch/object")

@@ -25,6 +25,7 @@
 .extern c_handle_syscall
 .extern c_handle_exception
 .extern c_handle_interrupt
+.extern c_handle_vcpu_fault
 
 trap_entry:
 #ifdef ENABLE_SMP_SUPPORT
@@ -32,62 +33,66 @@ trap_entry:
 #else
     csrwr $t0, LOONGARCH_CSR_KS3 //exchange the value of t0 and LOONGARCH_CSR_KS3
 #endif
-    st.d $ra, $t0, 0*REGBYTES
-    st.d $tp, $t0, 1*REGBYTES
+    st.d $ra, $t0, 1*REGBYTES
+    st.d $tp, $t0, 2*REGBYTES
 #ifndef ENABLE_SMP_SUPPORT
-    st.d $sp, $t0, 2*REGBYTES //store SP
+    st.d $sp, $t0, 3*REGBYTES //store SP
 #endif
-    st.d $a0, $t0, 3*REGBYTES
-    st.d $a1, $t0, 4*REGBYTES
-    st.d $a2, $t0, 5*REGBYTES
-    st.d $a3, $t0, 6*REGBYTES
-    st.d $a4, $t0, 7*REGBYTES
-    st.d $a5, $t0, 8*REGBYTES
-    st.d $a6, $t0, 9*REGBYTES
-    st.d $a7, $t0, 10*REGBYTES
+    st.d $a0, $t0, 4*REGBYTES
+    st.d $a1, $t0, 5*REGBYTES
+    st.d $a2, $t0, 6*REGBYTES
+    st.d $a3, $t0, 7*REGBYTES
+    st.d $a4, $t0, 8*REGBYTES
+    st.d $a5, $t0, 9*REGBYTES
+    st.d $a6, $t0, 10*REGBYTES
+    st.d $a7, $t0, 11*REGBYTES
     
-    st.d $t1, $t0, 12*REGBYTES
-    st.d $t2, $t0, 13*REGBYTES
-    st.d $t3, $t0, 14*REGBYTES
-    st.d $t4, $t0, 15*REGBYTES
-    st.d $t5, $t0, 16*REGBYTES
-    st.d $t6, $t0, 17*REGBYTES
-    st.d $t7, $t0, 18*REGBYTES
-    st.d $t8, $t0, 19*REGBYTES
-    st.d $r21, $t0,20*REGBYTES
+    st.d $t1, $t0, 13*REGBYTES
+    st.d $t2, $t0, 14*REGBYTES
+    st.d $t3, $t0, 15*REGBYTES
+    st.d $t4, $t0, 16*REGBYTES
+    st.d $t5, $t0, 17*REGBYTES
+    st.d $t6, $t0, 18*REGBYTES
+    st.d $t7, $t0, 19*REGBYTES
+    st.d $t8, $t0, 20*REGBYTES
+    st.d $r21, $t0,21*REGBYTES
+
+    st.d $fp, $t0, 22*REGBYTES
     
-    st.d $s0, $t0, 21*REGBYTES
-    st.d $s1, $t0, 22*REGBYTES
-    st.d $s2, $t0, 23*REGBYTES
-    st.d $s3, $t0, 24*REGBYTES
-    st.d $s4, $t0, 25*REGBYTES
-    st.d $s5, $t0, 26*REGBYTES
-    st.d $s6, $t0, 27*REGBYTES
-    st.d $s7, $t0, 28*REGBYTES
-    st.d $s8, $t0, 29*REGBYTES
-    st.d $fp, $t0, 30*REGBYTES
+    st.d $s0, $t0, 23*REGBYTES
+    st.d $s1, $t0, 24*REGBYTES
+    st.d $s2, $t0, 25*REGBYTES
+    st.d $s3, $t0, 26*REGBYTES
+    st.d $s4, $t0, 27*REGBYTES
+    st.d $s5, $t0, 28*REGBYTES
+    st.d $s6, $t0, 29*REGBYTES
+    st.d $s7, $t0, 30*REGBYTES
+    st.d $s8, $t0, 31*REGBYTES
     /* save t0 value */
 #ifdef ENABLE_SMP_SUPPORT
     //TODO
 #else
     csrrd $t8, LOONGARCH_CSR_KS3
 #endif
-    st.d $t8, $t0, 11*REGBYTES
+    st.d $t8, $t0, 12*REGBYTES
 
     csrrd $ra, LOONGARCH_CSR_ERA   // save csr_era,i.e., exception PC
-    st.d $ra, $t0, 31*REGBYTES
+    st.d $ra, $t0, 32*REGBYTES
 
     csrrd $t8, LOONGARCH_CSR_BADV  // save csr_badvaddr
-    st.d $t8, $t0, 32*REGBYTES
-
-    csrrd $t8, LOONGARCH_CSR_PRMD  // save csr_prmd, we don`t need to save csr_crmd
     st.d $t8, $t0, 33*REGBYTES
 
-    csrrd $t8, LOONGARCH_CSR_EUEN  // save csr_euen
+    csrrd $t8, LOONGARCH_CSR_PRMD  // save csr_prmd, we don`t need to save csr_crmd
     st.d $t8, $t0, 34*REGBYTES
 
-    csrrd $t8, LOONGARCH_CSR_ECFG  // save csr_ecfg
+    csrrd $t8, LOONGARCH_CSR_EUEN  // save csr_euen
     st.d $t8, $t0, 35*REGBYTES
+
+    csrrd $t8, LOONGARCH_CSR_ECFG  // save csr_ecfg
+    st.d $t8, $t0, 36*REGBYTES
+
+    csrrd $t8, LOONGARCH_CSR_BADI  // save csr_badi
+    st.d $t8, $t0, 37 * REGBYTES
 
     csrrd $s0, LOONGARCH_CSR_ESTAT // read csr_estat to s0
 
@@ -101,23 +106,43 @@ trap_entry:
 	add.d $sp, $sp, $t8
 #endif
     
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    /* Check if exit from vm */
+    csrrd   $t8, LOONGARCH_CSR_GSTAT
+    ori $t8, $t8, CSR_GSTAT_PVM
+    beqz    $t8, 1f
+    /* TODO: FPU */
+    /* TODO: LSX*/
+    /* Disable PVM bit for keeping from into guest */
+    ori $t8, $zero, CSR_GSTAT_PVM
+	csrxchg $zero, $t8, LOONGARCH_CSR_GSTAT
+    /* Clear GTLBC.TGID field ？*/
+	csrrd	$t8, LOONGARCH_CSR_GTLBC
+	bstrins.w	$t8, $zero, CSR_GTLBC_RID_SHIFT + CSR_GTLBC_RID_WIDTH - 1, CSR_GTLBC_RID_SHIFT
+	csrwr	$t8, LOONGARCH_CSR_GTLBC
+    /* Enable Address Map mode ？*/
+#endif
+1:
     /* Get the is of estat at [12:0]*/
-    bstrpick.d $s1, $s0, 12, 0
+    bstrpick.d $t8, $s0, 12, 0
 
     /* Check if it's an timer interrupt */
-    bnez $s1, interrupt
+    bnez $t8, interrupt
 
     /* Get the excode of estat at [21:16]*/
-    bstrpick.d $s1, $s0, 21, 16
+    bstrpick.d $a0, $s0, 21, 16
+    
+    li.d $t8, 0x15
+    bltu $t8, $a0, vcpu_fault 
 
-    li.d $s2, 11
-    bne $s1, $s2, exception
+    li.d $t8, 0xb 
+    bne $a0, $t8, exception
 
 handle_syscall:
     /* Set the return address to era + 4 in the case of a system call */
     addi.d $ra, $ra, 4
     /* Save NextIP*/
-    st.d $ra, $t0, 36*REGBYTES
+    st.d $ra, $t0, 38*REGBYTES
 
 #ifdef CONFIG_FASTPATH
 //Not tested yet, may triger a problem
@@ -135,13 +160,20 @@ handle_syscall:
     move $a2, $a7
     b c_handle_syscall
 
-exception:
+vcpu_fault:
+    /* Set the return address to era + 4 in the case of a system call */
+    addi.d $ra, $ra, 4
     /* Save NextIP*/
-    st.d $ra, $t0, 36*REGBYTES    
+    st.d $ra, $t0, 38*REGBYTES
+    b c_handle_vcpu_fault
+
+exception:
+    /* Save NextIP */
+    st.d $ra, $t0, 38*REGBYTES    
     b c_handle_exception
 
 
 interrupt:
     /* Save NextIP */
-    st.d $ra, $t0, 36*REGBYTES
+    st.d $ra, $t0, 38*REGBYTES
     b c_handle_interrupt

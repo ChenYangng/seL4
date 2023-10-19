@@ -48,7 +48,7 @@ static inline void debug_printKernelEntryReason(void)
                    (unsigned long) ksKernelEntry.invocation_tag);
         }
         break;
-#ifdef CONFIG_ARCH_ARM
+#if defined(CONFIG_ARCH_ARM) || defined(CONFIG_ARCH_LOONGARCH)
     case Entry_VCPUFault:
         printf("VCPUFault\n");
         break;

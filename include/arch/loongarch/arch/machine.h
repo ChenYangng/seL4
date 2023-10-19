@@ -152,22 +152,43 @@ static inline uint64_t csr_xchgq(uint64_t val, uint64_t mask, uint32_t reg)
 }
 
 /* IOCSR */
-static inline uint32_t iocsr_readl(uint32_t reg)
+static inline uint8_t iocsr_readb(uint32_t reg)
+{
+	return __iocsrrd_b(reg);
+}
+
+static inline uint16_t iocsr_readh(uint32_t reg)
+{
+	return __iocsrrd_h(reg);
+}
+
+static inline uint32_t iocsr_readw(uint32_t reg)
 {
 	return __iocsrrd_w(reg);
 }
 
-static inline uint64_t iocsr_readq(uint32_t reg)
+static inline uint64_t iocsr_readd(uint32_t reg)
 {
 	return __iocsrrd_d(reg);
 }
 
-static inline void iocsr_writel(uint32_t val, uint32_t reg)
+static inline void iocsr_writeb(uint8_t val, uint32_t reg)
 {
+	__iocsrwr_b(val, reg);
+}
+
+static inline void iocsr_writeh(uint16_t val, uint32_t reg)
+{
+	__iocsrwr_h(val, reg);
+}
+
+static inline void iocsr_writew(uint32_t val, uint32_t reg)
+{
+	printf("iocsr_writew!!!, val:%x, reg:%x\n", val, reg);
 	__iocsrwr_w(val, reg);
 }
 
-static inline void iocsr_writeq(uint64_t val, uint32_t reg)
+static inline void iocsr_writed(uint64_t val, uint32_t reg)
 {
 	__iocsrwr_d(val, reg);
 }
@@ -1080,7 +1101,130 @@ static inline void iocsr_writeq(uint64_t val, uint32_t reg)
 #define LS7A_INT_POL_REG        LS7A_PCH_REG_BASE + 0x3e0
 
 
+/* Bit Domains for CFG registers */
+#define LOONGSON_CFG0		0x0
+#define LOONGSON_CFG0_PRID 	GENMASK(31, 0)
 
+#define LOONGSON_CFG1 		0x1
+#define LOONGSON_CFG1_ISGR32	BIT(0)
+#define LOONGSON_CFG1_ISGR64	BIT(1)
+#define LOONGSON_CFG1_PAGING	BIT(2)
+#define LOONGSON_CFG1_IOCSR	BIT(3)
+#define LOONGSON_CFG1_PABITS	GENMASK(11, 4)
+#define LOONGSON_CFG1_VABITS	GENMASK(19, 12)
+#define LOONGSON_CFG1_UAL	BIT(20)
+#define LOONGSON_CFG1_RI	BIT(21)
+#define LOONGSON_CFG1_XI	BIT(22)
+#define LOONGSON_CFG1_RPLV	BIT(23)
+#define LOONGSON_CFG1_HUGEPG	BIT(24)
+#define LOONGSON_CFG1_IOCSRBRD	BIT(25)
+/* 0 for line, 1 for message */
+#define LOONGSON_CFG1_INTIMPL	BIT(26)
+
+#define LOONGSON_CFG2 		0x2
+#define LOONGSON_CFG2_FP	BIT(0)
+#define LOONGSON_CFG2_FPSP	BIT(1)
+#define LOONGSON_CFG2_FPDP	BIT(2)
+#define LOONGSON_CFG2_FPVERS	GENMASK(5, 3)
+#define LOONGSON_CFG2_LSX	BIT(6)
+#define LOONGSON_CFG2_LASX	BIT(7)
+#define LOONGSON_CFG2_COMPLEX	BIT(8)
+#define LOONGSON_CFG2_CRYPTO	BIT(9)
+#define LOONGSON_CFG2_LVZP	BIT(10)
+#define LOONGSON_CFG2_LVZVER	GENMASK(13, 11)
+#define LOONGSON_CFG2_LLFTP	BIT(14)
+#define LOONGSON_CFG2_LLFTPREV	GENMASK(17, 15)
+#define LOONGSON_CFG2_X86BT	BIT(18)
+#define LOONGSON_CFG2_ARMBT	BIT(19)
+#define LOONGSON_CFG2_LOONGARCHBT	BIT(20)
+#define LOONGSON_CFG2_LSPW	BIT(21)
+#define LOONGSON_CFG2_LAMO	BIT(22)
+
+#define LOONGSON_CFG3		0x3
+#define LOONGSON_CFG3_CCDMA	BIT(0)
+#define LOONGSON_CFG3_SFB	BIT(1)
+#define LOONGSON_CFG3_UCACC	BIT(2)
+#define LOONGSON_CFG3_LLEXC	BIT(3)
+#define LOONGSON_CFG3_SCDLY	BIT(4)
+#define LOONGSON_CFG3_LLDBAR	BIT(5)
+#define LOONGSON_CFG3_ITLBT	BIT(6)
+#define LOONGSON_CFG3_ICACHET	BIT(7)
+#define LOONGSON_CFG3_SPW_LVL	GENMASK(10, 8)
+#define CFG3_SPW_LVL_DEFAULT	4
+#define LOONGSON_CFG3_SPW_HG_HF	BIT(11)
+#define LOONGSON_CFG3_RVA	BIT(12)
+#define LOONGSON_CFG3_RVAMAX	GENMASK(16, 13)
+
+#define LOONGSON_CFG4 		0x4
+#define LOONGSON_CFG4_CCFREQ	GENMASK(31, 0)
+
+#define LOONGSON_CFG5 		0x5
+#define LOONGSON_CFG5_CCMUL	GENMASK(15, 0)
+#define LOONGSON_CFG5_CCDIV	GENMASK(31, 16)
+
+#define LOONGSON_CFG6 		0x6
+#define LOONGSON_CFG6_PMP	BIT(0)
+#define LOONGSON_CFG6_PAMVER	GENMASK(3, 1)
+#define LOONGSON_CFG6_PMNUM	GENMASK(7, 4)
+#define LOONGSON_CFG6_PMBITS	GENMASK(13, 8)
+#define LOONGSON_CFG6_UPM	BIT(14)
+
+#define LOONGSON_CFGX 		0x10
+#define LOONGSON_CFGX_L1_IUPRE	BIT(0)
+#define LOONGSON_CFGX_L1_UNIFY	BIT(1)
+#define LOONGSON_CFGX_L1_DPRE	BIT(2)
+#define LOONGSON_CFGX_L2_IUPRE	BIT(3)
+#define LOONGSON_CFGX_L2_IUUNIFY	BIT(4)
+#define LOONGSON_CFGX_L2_IUPRIV	BIT(5)
+#define LOONGSON_CFGX_L2_IUINCL	BIT(6)
+#define LOONGSON_CFGX_L2_DPRE	BIT(7)
+#define LOONGSON_CFGX_L2_DPRIV	BIT(8)
+#define LOONGSON_CFGX_L2_DINCL	BIT(9)
+#define LOONGSON_CFGX_L3_IUPRE	BIT(10)
+#define LOONGSON_CFGX_L3_IUUNIFY	BIT(11)
+#define LOONGSON_CFGX_L3_IUPRIV	BIT(12)
+#define LOONGSON_CFGX_L3_IUINCL	BIT(13)
+#define LOONGSON_CFGX_L3_DPRE	BIT(14)
+#define LOONGSON_CFGX_L3_DPRIV	BIT(15)
+#define LOONGSON_CFGX_L3_DINCL	BIT(16)
+
+#define LOONGSON_CFGX1 		0x11
+#define LOONGSON_CFGX1_WAYS_M	GENMASK(15, 0)
+#define LOONGSON_CFGX1_SETS_M	GENMASK(23, 16)
+#define LOONGSON_CFGX1_SIZE_M	GENMASK(30, 24)
+#define LOONGSON_CFGX1_WAYS 0
+#define LOONGSON_CFGX1_SETS	16
+#define LOONGSON_CFGX1_SIZE 24
+
+#define LOONGSON_CFGX2 		0x12
+#define LOONGSON_CFGX2_WAYS_M	GENMASK(15, 0)
+#define LOONGSON_CFGX2_SETS_M	GENMASK(23, 16)
+#define LOONGSON_CFGX2_SIZE_M	GENMASK(30, 24)
+#define LOONGSON_CFGX2_WAYS 0
+#define LOONGSON_CFGX2_SETS	16
+#define LOONGSON_CFGX2_SIZE 24
+
+#define LOONGSON_CFGX3 		0x13
+#define LOONGSON_CFGX3_WAYS_M	GENMASK(15, 0)
+#define LOONGSON_CFGX3_SETS_M	GENMASK(23, 16)
+#define LOONGSON_CFGX3_SIZE_M	GENMASK(30, 24)
+#define LOONGSON_CFGX3_WAYS 0
+#define LOONGSON_CFGX3_SETS	16
+#define LOONGSON_CFGX3_SIZE 24
+
+#define LOONGSON_CFGX4 		0x14
+#define LOONGSON_CFGX4_WAYS_M	GENMASK(15, 0)
+#define LOONGSON_CFGX4_SETS_M	GENMASK(23, 16)
+#define LOONGSON_CFGX4_SIZE_M	GENMASK(30, 24)
+#define LOONGSON_CFGX4_WAYS 0
+#define LOONGSON_CFGX4_SETS	16
+#define LOONGSON_CFGX4_SIZE 24
+
+#define LOONGSON_CFG3X 		0x30
+#define LOONGSON_CFG3X_MCSR_LCK	BIT(0)
+#define LOONGSON_CFG3X_NAP_EN	BIT(1)
+#define LOONGSON_CFG3X_VFPU_CG	BIT(2)
+#define LOONGSON_CFG3X_RAM_CG	BIT(3)
 
 #ifndef __ASSEMBLER__
 
@@ -1127,6 +1271,16 @@ static inline unsigned int read_csr_is(void)
 static inline void write_csr_index(unsigned int idx)
 {
 	if(__csrxchg(idx, CSR_TLBIDX_IDXM, LOONGARCH_CSR_TLBIDX)) return;
+}
+
+static inline void dbar(void)
+{
+    asm volatile("dbar 0" ::: "memory");
+}
+
+static inline void ibar(void)
+{
+    asm volatile("ibar 0" ::: "memory");
 }
 
 static inline void enable_pg(unsigned long val)

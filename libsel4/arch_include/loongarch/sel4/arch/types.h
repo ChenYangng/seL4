@@ -20,6 +20,7 @@ typedef seL4_CPtr seL4_LOONGARCH_Page;
 typedef seL4_CPtr seL4_LOONGARCH_PageTable;
 typedef seL4_CPtr seL4_LOONGARCH_ASIDControl;
 typedef seL4_CPtr seL4_LOONGARCH_ASIDPool;
+typedef seL4_CPtr seL4_LOONGARCH_VCPU;
 
 
 #define seL4_EndpointBits     4

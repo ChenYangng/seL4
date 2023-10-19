@@ -21,7 +21,7 @@ typedef enum {
     Entry_VMFault,
     Entry_Syscall,
     Entry_UnimplementedDevice,
-#ifdef CONFIG_ARCH_ARM
+#if defined(CONFIG_ARCH_ARM) || defined(CONFIG_ARCH_LOONGARCH)
     Entry_VCPUFault,
 #endif
 #ifdef CONFIG_ARCH_X86

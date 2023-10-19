@@ -18,6 +18,9 @@ typedef enum _object {
     seL4_LOONGARCH_16K_Page = seL4_ModeObjectTypeCount,
     seL4_LOONGARCH_Mega_Page,
     seL4_LOONGARCH_PageTableObject,
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    seL4_LOONGARCH_VCPUObject,
+#endif /* CONFIG_LOONGARCH_HYPERVISOR_SUPPORT */
     seL4_ObjectTypeCount
 } seL4_ArchObjectType;
 

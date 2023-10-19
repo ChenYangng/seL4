@@ -39,6 +39,9 @@ typedef struct asid_pool asid_pool_t;
 
 typedef struct arch_tcb {
     user_context_t tcbContext;
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    struct vcpu *tcbVCPU;
+#endif
 } arch_tcb_t;
 
 enum vm_rights {
@@ -60,6 +63,12 @@ typedef pte_t pde_t;
 #define PT_SIZE_BITS 14
 #define PT_PTR(r) ((pte_t *)(r))
 #define PT_REF(p) ((word_t)(p))
+
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+/* Generate a vcpu_t pointer from a vcpu block reference */
+#define VCPU_PTR(r)       ((struct vcpu *)(r))
+#define VCPU_REF(p)       ((word_t)(p))
+#endif
 
 #define PTE_SIZE_BITS   seL4_PageTableEntryBits
 #define PT_INDEX_BITS   seL4_PageTableIndexBits
@@ -87,6 +96,11 @@ static inline bool_t CONST cap_get_archCapIsPhysical(cap_t cap)
     case cap_asid_pool_cap:
         return true;
 
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    case cap_vcpu_cap:
+        return true;
+#endif
+
     default:
         /* unreachable */
         return false;
@@ -111,6 +125,11 @@ static inline word_t CONST cap_get_archCapSizeBits(cap_t cap)
 
     case cap_asid_pool_cap:
         return seL4_ASIDPoolBits;
+
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    case cap_vcpu_cap:
+        return seL4_VCPUBits;
+#endif
 
     default:
         assert(!"Unknown cap type");
@@ -138,6 +157,11 @@ static inline void *CONST cap_get_archCapPtr(cap_t cap)
 
     case cap_asid_pool_cap:
         return ASID_POOL_PTR(cap_asid_pool_cap_get_capASIDPool(cap));
+
+#ifdef CONFIG_LOONGARCH_HYPERVISOR_SUPPORT
+    case cap_vcpu_cap:
+        return VCPU_PTR(cap_vcpu_cap_get_capVCPUPtr(cap));
+#endif
 
     default:
         assert(!"Unknown cap type");
