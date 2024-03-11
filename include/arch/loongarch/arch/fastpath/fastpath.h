@@ -140,7 +140,7 @@ static inline void NORETURN FORCE_INLINE fastpath_restore(word_t badge, word_t m
         "ld.d  $t6, $t0, 18*%[REGSIZE]  \n"
         "ld.d  $t7, $t0, 19*%[REGSIZE]  \n"
         "ld.d  $t8, $t0, 20*%[REGSIZE]  \n"
-        "ld.d  $r21, $t0, 21*%[REGSIZE] \n"
+        // "ld.d  $r21, $t0, 21*%[REGSIZE] \n"
         "ld.d  $fp, $t0, 22*%[REGSIZE]  \n"
         "ld.d  $s0, $t0, 23*%[REGSIZE]  \n"
         "ld.d  $s1, $t0, 24*%[REGSIZE]  \n"

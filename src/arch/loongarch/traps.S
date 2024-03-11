@@ -55,7 +55,7 @@ trap_entry:
     st.d $t6, $t0, 18*REGBYTES
     st.d $t7, $t0, 19*REGBYTES
     st.d $t8, $t0, 20*REGBYTES
-    st.d $r21, $t0,21*REGBYTES
+    # st.d $r21, $t0,21*REGBYTES
 
     st.d $fp, $t0, 22*REGBYTES
     
@@ -126,6 +126,8 @@ trap_entry:
     /* Get the is of estat at [12:0]*/
     bstrpick.d $t8, $s0, 12, 0
 
+    /* Get the is of estat at [12:0]*/
+    bstrpick.d $a0, $s0, 12, 0
     /* Check if it's an timer interrupt */
     bnez $t8, interrupt
 

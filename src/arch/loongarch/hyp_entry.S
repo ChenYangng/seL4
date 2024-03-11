@@ -88,8 +88,12 @@ switch_to_guest:
 	/* Load KVM_ARCH register ？*/
 
 	/* passthrough 8 hardware interrupts to guest */
-    li.w    t0, CSR_GINTC_PIP
-    csrwr   t0, LOONGARCH_CSR_GINTC
+    # li.w    t0, CSR_GINTC_HC
+    # li.w    t0, CSR_GINTC_VIP
+    # li.w    t0, CSR_GINTC_PIP
+    # li.w    t0, 0xfe00
+    # li.w    t0, 0x0
+    # csrwr   t0, LOONGARCH_CSR_GINTC
 
     invtlb  0x12, $r0, $r0
     jirl    zero, ra, 0    

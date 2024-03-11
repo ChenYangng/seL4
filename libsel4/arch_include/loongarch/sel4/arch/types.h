@@ -40,7 +40,7 @@ typedef struct seL4_UserContext_ {
     seL4_Word s6;
     seL4_Word s7;
     seL4_Word s8;
-    seL4_Word s9;
+    seL4_Word fp;
 
     seL4_Word a0;
     seL4_Word a1;
@@ -65,7 +65,6 @@ typedef struct seL4_UserContext_ {
 } seL4_UserContext;
 
 typedef enum {
-    seL4_LOONGARCH_ExecuteNever = 0x1,
-    seL4_LOONGARCH_Default_VMAttributes = 0,
+    seL4_LOONGARCH_Default_VMAttributes = 0x1,
     SEL4_FORCE_LONG_ENUM(seL4_LOONGARCH_VMAttributes)
 } seL4_LOONGARCH_VMAttributes;

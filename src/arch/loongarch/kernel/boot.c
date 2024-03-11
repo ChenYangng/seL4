@@ -102,7 +102,8 @@ BOOT_CODE static void init_irqs(cap_t root_cnode_cap)
     for (i = 0; i <= maxIRQ; i++) {
         if (i != irqInvalid) {
             /* IRQ 255 is irqInvalid */
-            setIRQState(IRQInactive, i);
+            // setIRQState(IRQInactive, i);
+            setIRQState(IRQSignal, i);
         }
     }
     setIRQState(IRQTimer, KERNEL_TIMER_IRQ);
@@ -319,8 +320,10 @@ static BOOT_CODE bool_t try_init_kernel(
     /* create the cap for managing thread domains */
     create_domain_cap(root_cnode_cap);
 
+    printf("ecfg: %x\n",read_csr_ecfg());
     /* initialise the IRQ states and provide the IRQ control cap */
     init_irqs(root_cnode_cap);
+    printf("ecfg: %x\n",read_csr_ecfg());
 
     /* create the bootinfo frame */
     populate_bi_frame(0, CONFIG_MAX_NUM_NODES, ipcbuf_vptr, extra_bi_size);
@@ -465,6 +468,7 @@ static BOOT_CODE bool_t try_init_kernel(
      * BKL here to play safe. It is released when the kernel is left. */
     NODE_LOCK_SYS;
 
+    printf("ecfg: %x\n",read_csr_ecfg());
     printf("Booting all finished, dropped to user space\n");
     return true;
 }

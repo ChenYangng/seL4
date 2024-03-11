@@ -134,7 +134,7 @@ block VCPUFault {
 block vm_attributes {
     padding 32
     padding 31
-    field riscvExecuteNever  1
+    field loongarchPageCacheable  1
 }
 
 

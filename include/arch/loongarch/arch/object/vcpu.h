@@ -40,9 +40,11 @@ typedef word_t vcpu_fault_type_t;
 exception_t decodeVCPUWriteReg(cap_t cap, unsigned int length, word_t *buffer);
 exception_t decodeVCPUReadReg(cap_t cap, unsigned int length, bool_t call, word_t *buffer);
 exception_t decodeVCPUSetTCB(cap_t cap);
+exception_t decodeVCPUInjectIRQ(cap_t cap, word_t *buffer);
 exception_t invokeVCPUWriteReg(vcpu_t *vcpu, word_t field, word_t value);
 exception_t invokeVCPUReadReg(vcpu_t *vcpu, word_t field, bool_t call);
 exception_t invokeVCPUSetTCB(vcpu_t *vcpu, tcb_t *tcb);
+exception_t invokeVCPUInjectIRQ(vcpu_t *vcpu, word_t virq);
 void associateVCPUTCB(vcpu_t *vcpu, tcb_t *tcb);
 void dissociateVCPUTCB(vcpu_t *vcpu, tcb_t *tcb);
 exception_t decodeLOONGARCHVCPUInvocation(
@@ -116,29 +118,33 @@ static inline void loongarch_vcpu_boot_init(void)
 
 static inline void handle_gspr_csr(uint32_t badi, tcb_t *tcb)
 {
-    // uint32_t rd, rj, csrid;
+    uint32_t rd, rj, csrid;
     // word_t csr_mask;
     // word_t val = 0;
-    //
-    // rd = badi & 0x1f;
-    // rj = (badi >> 5) & 0x1f;
-    // csrid = (badi >> 10) & 0x3fff;
-    //
-    // if (rj == 0) {
-    //     /* process csrrd */
-    //     val = emu_csr_read(tcb, rd, csrid);
-    //     setRegister(tcb, rd, val);
-    // } else if (rj == 1) {
-    //     /* process csrwr */
-    //     val = getRegister(tcb, rd);
-    //     emu_csr_write(tcb, rd, csrid);
-    // } else {
-    //     /* process csrxchg */
-    //     val = getRegister(tcb, rd);
-    //     csr_mask = getRegister(tcb, rj);
-    //     emu_csr_xchg(tcb, rd, rj, csrid);
-    // }
-    printf("!!!HANDLE_GSPR_CSR!!!\n");
+
+    rd = badi & 0x1f;
+    rj = (badi >> 5) & 0x1f;
+    csrid = (badi >> 10) & 0x3fff;
+
+    printf("gspr_csr, rd: %u, rj: %u\n", rd, rj);
+
+    if (rj == 0) {
+        /* process csrrd */
+        printf("guest csrrd 0x%x\n", csrid);
+        // val = emu_csr_read(tcb, rd, csrid);
+        // setRegister(tcb, rd, val);
+    } else if (rj == 1) {
+        /* process csrwr */
+        printf("guest csrwr 0x%x\n", csrid);
+        // val = getRegister(tcb, rd);
+        // emu_csr_write(tcb, rd, csrid);
+    } else {
+        /* process csrxchg */
+        printf("guest csrxchg 0x%x\n", csrid);
+        // val = getRegister(tcb, rd);
+        // csr_mask = getRegister(tcb, rj);
+        // emu_csr_xchg(tcb, rd, rj, csrid);
+    }
 }
 
 static inline void handle_gspr_cacop(uint32_t badi, tcb_t *tcb)
@@ -174,52 +180,75 @@ static inline void handle_gspr_cacop(uint32_t badi, tcb_t *tcb)
 	// default:
 	// 	break;
  //    }
-
-    // printf("GUEST CACOP DONE\n");
-    printf("!!!HANDLE_GSPR_CACOP!!!\n");
 }
 
 static inline uint32_t handle_gspr_iocsr(uint32_t badi, tcb_t *tcb)
 {
-    printf("handle gspr iocsr\n");
     uint32_t error = 0;
 
     uint32_t rd, rj, opcode;
     uint32_t iocsr_num;
+    uint64_t val;
 
     rd = badi & 0x1f;
     rj = (badi >> 5) & 0x1f;
     opcode = badi >> 10;
     iocsr_num = getRegister(tcb, rj);
-    printf("rd:%u, rj:%u \n", rd, rj);
+    // printf("rd:%u, rj:%u , iocsr_num:0x%x\n", rd, rj, iocsr_num);
 
 
     /* Process IOCSR ops */
     switch (opcode) {
         case 0x19200: /* iocsrrdb_op */
-            setRegister(tcb, rd, iocsr_readb(rj));
+            // printf("iocsr readb\n");
+            setRegister(tcb, rd, iocsr_readb(iocsr_num));
             break;
         case 0x19201: /* iocsrrdh_op */
-            setRegister(tcb, rd, iocsr_readh(rj));
+            // printf("iocsr readh\n");
+            setRegister(tcb, rd, iocsr_readh(iocsr_num));
             break;
         case 0x19202: /* iocsrrdw_op */
-            setRegister(tcb, rd, iocsr_readw(rj));
+            // printf("iocsr readw\n");
+            setRegister(tcb, rd, iocsr_readw(iocsr_num));
             break;
         case 0x19203: /* iocsrrdd_op */
-            setRegister(tcb, rd, iocsr_readd(rj));
+            // printf("iocsr readd\n");
+            if (iocsr_num == 0x1800) {
+                // printf("iocsr readd 0x1800\n");
+                setRegister(tcb, rd, 0xffffffffffffffff);
+            } else if (iocsr_num == 0x1808) {
+                setRegister(tcb, rd, 0xffffffffffffffff);
+                // setRegister(tcb, rd, iocsr_readd(iocsr_num));
+            } else if (iocsr_num == 0x1810) {
+                setRegister(tcb, rd, 0xffffffffffffffff);
+                // setRegister(tcb, rd, iocsr_readd(iocsr_num));
+            } else if (iocsr_num == 0x1818) {
+                setRegister(tcb, rd, 0xffffffffffffffff);
+                // setRegister(tcb, rd, iocsr_readd(iocsr_num));
+            } else {
+                setRegister(tcb, rd, iocsr_readd(iocsr_num));
+            }
             break;
         case 0x19204: /* iocsrwrb_op */
-            iocsr_writeb(getRegister(tcb, rd), iocsr_num);
+            val = getRegister(tcb, rd);
+            // printf("iocsr writeb, val = 0x%llx\n", val);
+            iocsr_writeb(val, iocsr_num);
             break;
         case 0x19205: /* iocsrwrh_op */
-            iocsr_writeh(getRegister(tcb, rd), iocsr_num);
+            val = getRegister(tcb, rd);
+            // printf("iocsr writeh, val = 0x%llx\n", val);
+            iocsr_writeh(val, iocsr_num);
             break;
         case 0x19206: /* iocsrwrw_op */
-            printf("iocsr writew\n");
-            iocsr_writew(getRegister(tcb, rd), iocsr_num);
+            val = getRegister(tcb, rd);
+            // printf("iocsr writew, val = 0x%llx\n", val);
+            iocsr_writew(val, iocsr_num);
             break;
         case 0x19207: /* iocsrwrd_op */
-            iocsr_writed(getRegister(tcb, rd), iocsr_num);
+            if (iocsr_num == 0x1800) break;
+            val = getRegister(tcb, rd);
+            // printf("iocsr writed, val = 0x%llx\n", val);
+            iocsr_writed(val, iocsr_num);
             break;
         default:
             break;
@@ -230,18 +259,19 @@ static inline uint32_t handle_gspr_iocsr(uint32_t badi, tcb_t *tcb)
 
 static inline void loongarch_emul_idle(tcb_t *tcb)
 {
-    printf("!!!IDLE!!!\n");
+    // printf("!!!IDLE!!!\n");
     // suspend(tcb);
 }
 
 static inline void handle_gspr(tcb_t *tcb)
 {
-    printf("handle gspr\n");
+    // printf("handle gspr\n");
     uint32_t res = 0;
 
     uint32_t rd, rj;
     uint32_t badi = getRegister(tcb, csr_badi);
     uint32_t cpucfg_no;
+    // printf("badi:0x%x\n", badi);
 
     switch ((badi >> 24) & 0xff) {
     case 0x0:
@@ -253,16 +283,22 @@ static inline void handle_gspr(tcb_t *tcb)
             setRegister(tcb, rd, read_cpucfg(cpucfg_no));
             /* Ignore VZ for guest */
 			if (cpucfg_no == 2) {
-                setRegister(tcb, rd, (getRegister(tcb, rd) & ~LOONGSON_CFG2_LVZP));
+			    /* qemu linux*/
+			    setRegister(tcb, rd, 0x40c00f);
+                // setRegister(tcb, rd, (getRegister(tcb, rd) & ~LOONGSON_CFG2_LVZP));
             } else if (cpucfg_no == 6) {
-                setRegister(tcb, rd, (getRegister(tcb, rd) & ~LOONGSON_CFG6_PMP));
+			    /* qemu linux*/
+			    setRegister(tcb, rd, 0x0);
+                // setRegister(tcb, rd, (getRegister(tcb, rd) & ~LOONGSON_CFG6_PMP));
             }
+            printf("cpucfg num: %x, res_val: %lx\n", cpucfg_no, getRegister(tcb, rd));
         } else {
             res = 1;
         }
         break;
     case 0x4:
         /* csr */
+        printf("handle gspr csr\n");
         handle_gspr_csr(badi, tcb);
         break;
     case 0x6:
@@ -270,6 +306,7 @@ static inline void handle_gspr(tcb_t *tcb)
         switch ((badi >> 22) & 0x3ff) {
         case 0x18:
             /* cacop */
+            printf("handle gspr cacop\n");
             handle_gspr_cacop(badi, tcb);
             break;
         case 0x19:
@@ -277,17 +314,19 @@ static inline void handle_gspr(tcb_t *tcb)
             switch ((badi >> 15) & 0x1ffff) {
             case 0xc90:
                 /* iocsr */
+                // printf("handle gspr iocsr\n");
                 handle_gspr_iocsr(badi, tcb);
-                printf("handle gspr iocsr done!\n");
                 break;
             case 0xc91:
                 /* idle */
+                // printf("handle gspr idle\n");
                 loongarch_emul_idle(tcb);
+                break;
             default:
                 res = 1;
                 break;
             }
-        
+            break;
         default:
             res = 1;
             break;
@@ -299,6 +338,7 @@ static inline void handle_gspr(tcb_t *tcb)
     }
 
     if (unlikely(res)) {
+        printf("unhandled gspr\n");
         /* TODO: rollback guest pc */
     }
 
@@ -306,11 +346,11 @@ static inline void handle_gspr(tcb_t *tcb)
 
 static inline bool_t loongarch_handleVCPUFault(word_t ecode)
 {
-    printf("handleVCPUFault\n");
+    // printf("handleVCPUFault\n");
     switch (ecode) {
     case LAGuestSensitivePrivilegeResource:
         handle_gspr(NODE_STATE(ksCurThread));
-        printf("handle gspr done!\n");
+        // printf("handle gspr done!\n");
         /* code */
         break;
     case LAHypCall:

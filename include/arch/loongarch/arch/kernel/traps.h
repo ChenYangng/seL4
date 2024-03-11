@@ -59,7 +59,8 @@ VISIBLE NORETURN;
 void c_handle_syscall(word_t cptr, word_t msgInfo, syscall_t syscall)
 VISIBLE NORETURN;
 
-void c_handle_interrupt(void)
+// void c_handle_interrupt(void)
+void c_handle_interrupt(word_t is)
 VISIBLE NORETURN;
 
 void c_handle_exception(word_t ecode)

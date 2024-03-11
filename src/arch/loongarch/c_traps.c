@@ -57,14 +57,37 @@ void VISIBLE NORETURN restore_user_context(void) {
     // uint32_t cpucfg10 = 0;
     // asm volatile("cpucfg %0, %1" : "=r"(cpucfg10) : "r"(idx) : "memory");
     // printf("cpucfg10: %x\n", cpucfg10);
+    // uint64_t val = 0x0;
+    // uint64_t reg = 0x5;
+    // asm volatile("parse_r __reg, %[val]	\n"
+    //              ".word 0x5 << 24 | %[reg] << 10 | 0 << 5 | __reg	\n"
+    //              : [val] "+r"(val)
+    //              : [reg] "i"(reg)
+    //              : "memory");
+    // printf("gestat: 0x%llx\n", val);
     if (flag) {
-      uint64_t val = 0xa8;
-      uint64_t reg = 0x0;
-      asm volatile("parse_r __reg, %[val]	\n"
-                   ".word 0x5 << 24 | %[reg] << 10 | 1 << 5 | __reg	\n"
-                   : [val] "+r"(val)
-                   : [reg] "i"(reg)
-                   : "memory");
+      // uint64_t val = 0xa8;
+      // uint64_t reg = 0x0;
+      // asm volatile("parse_r __reg, %[val]	\n"
+      //              ".word 0x5 << 24 | %[reg] << 10 | 1 << 5 | __reg	\n"
+      //              : [val] "+r"(val)
+      //              : [reg] "i"(reg)
+      //              : "memory");
+      // val = 0x0;
+      // reg = 0x5;
+      // asm volatile("parse_r __reg, %[val]	\n"
+      //              ".word 0x5 << 24 | %[reg] << 10 | 1 << 5 | __reg	\n"
+      //              : [val] "+r"(val)
+      //              : [reg] "i"(reg)
+      //              : "memory");
+      word_t val = 0xfe00;
+      asm volatile(
+        "csrwr %0, 0x52 \n"
+        : "+r"(val)
+        :
+        : "memory"
+      );
+      ((word_t *)cur_thread_reg)[35] = 0x1; 
       flag = 0;
     }
     switch_to_guest(cur_thread_reg, cur_vcpu);
@@ -97,7 +120,7 @@ void VISIBLE NORETURN restore_user_context(void) {
       "ld.d  $t6, $t0, 18*%[REGSIZE]  \n"
       "ld.d  $t7, $t0, 19*%[REGSIZE]  \n"
       "ld.d  $t8, $t0, 20*%[REGSIZE]  \n"
-      "ld.d  $r21, $t0, 21*%[REGSIZE] \n"
+      // "ld.d  $r21, $t0, 21*%[REGSIZE] \n"
       "ld.d  $fp, $t0, 22*%[REGSIZE]  \n"
       "ld.d  $s0, $t0, 23*%[REGSIZE]  \n"
       "ld.d  $s1, $t0, 24*%[REGSIZE]  \n"
@@ -149,7 +172,10 @@ void VISIBLE NORETURN restore_user_context(void) {
   UNREACHABLE();
 }
 
-void VISIBLE NORETURN c_handle_interrupt(void) {
+void VISIBLE NORETURN c_handle_interrupt(word_t is) {
+  // if (is != 0x800) {
+  //   printf("receive int, IS = 0x%lx\n", is);
+  // }
   NODE_LOCK_IRQ_IF(getActiveIRQ() != INTERRUPT_IPI);
 
   c_entry_hook();
@@ -165,6 +191,7 @@ void VISIBLE NORETURN c_handle_exception(word_t ecode) {
 
   c_entry_hook();
 
+  // printf("c_handle_exception, ecode: 0x%lx\n", ecode);
   switch (ecode) {
   case LAAddrError:             // ADEF or ADEM
   case LAAddrAlignFault:        // ALE
@@ -277,6 +304,7 @@ VISIBLE NORETURN void c_handle_vcpu_fault(word_t ecode)
 
     c_entry_hook();
 
+    // printf("c_handle_vcpu_fault, ecode: 0x%lx\n", ecode);
 #ifdef TRACK_KERNEL_ENTRIES
     ksKernelEntry.path = Entry_VCPUFault;
     ksKernelEntry.word = ecode;

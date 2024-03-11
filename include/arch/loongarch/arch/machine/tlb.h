@@ -184,7 +184,7 @@ static inline void invtlb_all(uint32_t op, uint32_t info, uint64_t addr)
 #define tlb_end_vma(tlb, vma) do { } while (0)
 #define __tlb_remove_tlb_entry(tlb, ptep, address) do { } while (0)
 
-extern void handle_tlb_load(void);
+extern int handle_tlb_load(void);
 extern int handle_tlb_store(void);
 extern void handle_tlb_modify(void);
 extern void handle_tlb_refill(void);

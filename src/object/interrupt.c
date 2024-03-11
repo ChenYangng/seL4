@@ -199,21 +199,48 @@ void handleInterrupt(irq_t irq)
         /* Merging the variable declaration and initialization into one line
          * requires an update in the proofs first. Might be a c89 legacy.
          */
-        cap_t cap;
-        cap = intStateIRQNode[IRQT_TO_IDX(irq)].cap;
-        if (cap_get_capType(cap) == cap_notification_cap &&
-            cap_notification_cap_get_capNtfnCanSend(cap)) {
-            sendSignal(NTFN_PTR(cap_notification_cap_get_capNtfnPtr(cap)),
-                       cap_notification_cap_get_capNtfnBadge(cap));
-        } else {
-#ifdef CONFIG_IRQ_REPORTING
-            printf("Undelivered IRQ: %d\n", (int)IRQT_TO_IRQ(irq));
-#endif
-        }
-#ifndef CONFIG_ARCH_RISCV
-        maskInterrupt(true, irq);
-#endif
-        break;
+        // printf("IRQSignal, irq %ld\n", irq);
+        word_t reg = 0x52;
+        word_t val = csr_readl(reg);
+        // printf("read gintctl 0x%lx\n", val);
+        val |= 1 << (irq - 2);
+        csr_writel(val, reg);
+        // printf("write gintctl 0x%lx\n", val);
+        // word_t reg = 0x52;
+        // word_t val = 1 << (irq - 2);
+        // word_t mask = 0xff; 
+        // csr_xchgl(val, mask, reg);
+            // word_t gestat = 0x0;
+            // word_t reg = 0x5;
+            // asm volatile("parse_r __reg, %[gestat]	\n"
+            //            ".word 0x5 << 24 | %[reg] << 10 | 0 << 5 | __reg	\n"
+            //            : [gestat] "+r"(gestat)
+            //            : [reg] "i"(reg)
+            //            : "memory");
+            // printf("read gestat: 0x%lx\n", gestat);
+            // gestat |= 1 << irq;
+            // printf("gestat write: 0x%lx\n", gestat);
+            // asm volatile("parse_r __reg, %[gestat]	\n"
+            //            ".word 0x5 << 24 | %[reg] << 10 | 1 << 5 | __reg	\n"
+            //            : [gestat] "+r"(gestat)
+            //            : [reg] "i"(reg)
+            //            : "memory");
+            break;
+//         cap_t cap;
+//         cap = intStateIRQNode[IRQT_TO_IDX(irq)].cap;
+//         if (cap_get_capType(cap) == cap_notification_cap &&
+//             cap_notification_cap_get_capNtfnCanSend(cap)) {
+//             sendSignal(NTFN_PTR(cap_notification_cap_get_capNtfnPtr(cap)),
+//                        cap_notification_cap_get_capNtfnBadge(cap));
+//         } else {
+// #ifdef CONFIG_IRQ_REPORTING
+//             printf("Undelivered IRQ: %d\n", (int)IRQT_TO_IRQ(irq));
+// #endif
+//         }
+// #ifndef CONFIG_ARCH_RISCV
+//         maskInterrupt(true, irq);
+// #endif
+        // break;
     }
 
     case IRQTimer:
@@ -233,6 +260,7 @@ void handleInterrupt(irq_t irq)
 #endif /* ENABLE_SMP_SUPPORT */
 
     case IRQReserved:
+        printf("IRQReserved, irq %ld\n", irq);
         handleReservedIRQ(irq);
         break;
 
@@ -241,6 +269,7 @@ void handleInterrupt(irq_t irq)
          * code is broken. Hopefully masking it again should make the interrupt
          * go away.
          */
+        printf("IRQInactive, irq %ld\n", irq);
         maskInterrupt(true, irq);
 #ifdef CONFIG_IRQ_REPORTING
         printf("Received disabled IRQ: %d\n", (int)IRQT_TO_IRQ(irq));
@@ -249,6 +278,7 @@ void handleInterrupt(irq_t irq)
 
     default:
         /* No corresponding haskell error */
+        printf("Invalid IRQ state, irq %ld\n", irq);
         fail("Invalid IRQ state");
     }
 

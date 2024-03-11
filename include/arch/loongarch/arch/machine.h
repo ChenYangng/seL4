@@ -184,7 +184,6 @@ static inline void iocsr_writeh(uint16_t val, uint32_t reg)
 
 static inline void iocsr_writew(uint32_t val, uint32_t reg)
 {
-	printf("iocsr_writew!!!, val:%x, reg:%x\n", val, reg);
 	__iocsrwr_w(val, reg);
 }
 

@@ -25,7 +25,7 @@
             <member name="s6"/>
             <member name="s7"/>
             <member name="s8"/>
-            <member name="s9"/>
+            <member name="fp"/>
             <member name="a0"/>
             <member name="a1"/>
             <member name="a2"/>
@@ -340,6 +340,32 @@
             <error name="seL4_InvalidCapability">
                 <description>
                     The <texttt text="_service"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+        </method>
+        <method id="LOONGARCHVCPUInjectIRQ" name="InjectIRQ" manual_name="Inject IRQ">
+            <condition><config var="CONFIG_LOONGARCH_HYPERVISOR_SUPPORT"/></condition>
+            <brief>
+                Inject an IRQ to a virtual CPU
+            </brief>
+            <description>
+                TODO
+            </description>
+            <param dir="in" name="virq" type="seL4_Uint16"
+            description="Virtual IRQ ID"/>
+            <error name="seL4_IllegalOperation">
+                <description>
+                    The <texttt text="_service"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+            <error name="seL4_InvalidCapability">
+                <description>
+                    The <texttt text="_service"/> is a CPtr to a capability of the wrong type.
+                </description>
+            </error>
+            <error name="seL4_RangeError">
+                <description>
+                    The <texttt text="virq"/> is invalid.
                 </description>
             </error>
         </method>

@@ -267,7 +267,8 @@ BOOT_CODE void initLocalIRQController(void)
     printf("Initializing local IRQ and extend io interrupt controller...\n");
 
     /* Currently only enabled timer Interrupt */
-    set_csr_ecfg(BIT(ECFG_TIMER));
+    // set_csr_ecfg(BIT(ECFG_TIMER));
+    set_csr_ecfg(0x1fff);
 
     /* map extend io interrupt to HW1 of node 0, core 0.*/
     extioi_init_hart();

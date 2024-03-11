@@ -39,6 +39,10 @@
 #ifdef __ASSEMBLER__
 #define PT_INDEX_BITS 11
 #define PTRS_PER_PGD (UL_CONST(1) << PT_INDEX_BITS)
+#define PTRS_PER_PD (UL_CONST(1) << PT_INDEX_BITS)
+#define PTRS_PER_PD_BITS PT_INDEX_BITS
+#define PTRS_PER_PTE_BITS PT_INDEX_BITS
+#def
 #endif /*__ASSEMBLER__*/
 
 #define PT_LEVEL_1 1

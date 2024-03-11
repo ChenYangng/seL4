@@ -183,7 +183,7 @@ static pte_t pte_next(word_t phys_addr, bool_t is_leaf, enum PTE_TYPE pte_type)
     return pte;
 }
 
-static pte_t user_pte_next(word_t phys_addr, bool_t is_leaf, enum PTE_TYPE pte_type, bool_t uncached)
+static pte_t user_pte_next(word_t phys_addr, bool_t is_leaf, enum PTE_TYPE pte_type, bool_t cacheable, vm_rights_t vm_rights)
 {
     pte_t pte;
 
@@ -191,17 +191,7 @@ static pte_t user_pte_next(word_t phys_addr, bool_t is_leaf, enum PTE_TYPE pte_t
         pte.words[0] = PTE_CREATE_NEXT(phys_addr);
     }
     else {
-        if (uncached) {
-            if (pte_type == PTE_L3) {
-                pte.words[0] = USER_PTE_CREATE_L3_LEAF_UNCACHED(phys_addr);
-            }
-            else if (pte_type == PTE_L2) {
-                pte.words[0] = USER_PTE_CREATE_L2_LEAF_UNCACHED(phys_addr);
-            }
-            else {
-                pte.words[0] = USER_PTE_CREATE_L1_LEAF_UNCACHED(phys_addr);
-            }
-        } else {
+        if (cacheable) {
             if (pte_type == PTE_L3) {
                 pte.words[0] = USER_PTE_CREATE_L3_LEAF(phys_addr);
             }
@@ -211,7 +201,21 @@ static pte_t user_pte_next(word_t phys_addr, bool_t is_leaf, enum PTE_TYPE pte_t
             else {
                 pte.words[0] = USER_PTE_CREATE_L1_LEAF(phys_addr);
             }
+        } else {
+            if (pte_type == PTE_L3) {
+                pte.words[0] = USER_PTE_CREATE_L3_LEAF_UNCACHED(phys_addr);
+            }
+            else if (pte_type == PTE_L2) {
+                pte.words[0] = USER_PTE_CREATE_L2_LEAF_UNCACHED(phys_addr);
+            }
+            else {
+                pte.words[0] = USER_PTE_CREATE_L1_LEAF_UNCACHED(phys_addr);
+            }
         }
+    }
+    
+    if (vm_rights == VMReadOnly) {
+        pte.words[0] &= ~(1 << 1);
     }
 
     return pte;
@@ -337,7 +341,7 @@ BOOT_CODE void map_it_pt_cap(cap_t vspace_cap, cap_t pt_cap)
     // } else {
     //     *targetSlot = pte_next(addrFromPPtr(pt), false, PTE_NONE);
     // }
-    *targetSlot = user_pte_next(addrFromPPtr(pt), false, PTE_NONE, 0);
+    *targetSlot = user_pte_next(addrFromPPtr(pt), false, PTE_NONE, 0, VMReadWrite);
 
     // sfence();
 }
@@ -354,7 +358,7 @@ BOOT_CODE void map_it_frame_cap(cap_t vspace_cap, cap_t frame_cap)
 
     pte_t *targetSlot = lu_ret.ptSlot;
 
-    *targetSlot = user_pte_next(addrFromPPtr(frame_pptr), true, PTE_L3, 0);
+    *targetSlot = user_pte_next(addrFromPPtr(frame_pptr), true, PTE_L3, 1, VMReadWrite);
 
     // sfence();
 }
@@ -570,11 +574,18 @@ exception_t handleVMFault(tcb_t *thread, vm_fault_type_t vm_faultType)
     uint64_t addr;
     addr = read_csr_badv();
 
+    // printf("handleVMFault, type: %lu, addr: %llu \n", vm_faultType, addr);
     switch (vm_faultType)
     {
         case LALoadPageInvalid:     //PIL
-            current_fault = seL4_Fault_VMFault_new(addr, LALoadPageInvalid, false);
-            return EXCEPTION_FAULT;
+            // current_fault = seL4_Fault_VMFault_new(addr, LALoadPageInvalid, false);
+            // return EXCEPTION_FAULT;
+            if (handle_tlb_load()) {
+                current_fault = seL4_Fault_VMFault_new(addr, LALoadPageInvalid, false);
+                return EXCEPTION_FAULT;
+            } else {
+                return EXCEPTION_NONE;
+            }
         case LAStorePageInvalid:    //PIS
             if (handle_tlb_store()) {
                 current_fault = seL4_Fault_VMFault_new(addr, LAStorePageInvalid, false);
@@ -583,7 +594,7 @@ exception_t handleVMFault(tcb_t *thread, vm_fault_type_t vm_faultType)
                 return EXCEPTION_NONE;
             }
         case LAFetchPageInvalid:    //PIF
-            current_fault = seL4_Fault_VMFault_new(addr, LAFetchPageInvalid, false);
+            current_fault = seL4_Fault_VMFault_new(addr, LAFetchPageInvalid, true);
             return EXCEPTION_FAULT;
         case LAPageModException:    //PME
             current_fault = seL4_Fault_VMFault_new(addr, LAPageModException, false);
@@ -592,12 +603,12 @@ exception_t handleVMFault(tcb_t *thread, vm_fault_type_t vm_faultType)
             current_fault = seL4_Fault_VMFault_new(addr, LAPageNoReadable, false);
             return EXCEPTION_FAULT;
         case LAPageNoExecutable:    //PNX
-            current_fault = seL4_Fault_VMFault_new(addr, LAFetchPageInvalid, false);
+            current_fault = seL4_Fault_VMFault_new(addr, LAFetchPageInvalid, true);
             return EXCEPTION_FAULT;
         case LAPagePrivilegeIllegal://PPI
             current_fault = seL4_Fault_VMFault_new(addr, LAPagePrivilegeIllegal, false);
             return EXCEPTION_FAULT;
-        case LAAddrError:           //ADEF or ADEM
+        case LAAddrError:           //ADEF or ADEM, Instruction or Data
             current_fault = seL4_Fault_VMFault_new(addr, LAAddrError, false);
             return EXCEPTION_FAULT;
         case LAAddrAlignFault:      //ALE
@@ -809,9 +820,9 @@ vm_rights_t CONST maskVMRights(vm_rights_t vm_rights, seL4_CapRights_t cap_right
 
 /* The rest of the file implements the LOONGARCH object invocations */
 
-static pte_t CONST makeUserPTE(paddr_t paddr, bool_t isDevice/*, bool_t executable, vm_rights_t vm_rights*/)
+static pte_t CONST makeUserPTE(paddr_t paddr, bool_t cacheable, vm_rights_t vm_rights)
 {
-    return user_pte_next(paddr, true, PTE_L3, isDevice);
+    return user_pte_next(paddr, true, PTE_L3, cacheable, vm_rights);
 }
 
 static inline bool_t CONST checkVPAlignment(vm_page_size_t sz, word_t w)
@@ -917,7 +928,7 @@ static exception_t decodeLOONGARCHPageTableInvocation(word_t label, word_t lengt
 
     paddr_t paddr = addrFromPPtr(
                         PTE_PTR(cap_page_table_cap_get_capPTBasePtr(cap)));
-    pte_t pte = user_pte_next(paddr, false, PTE_NONE, 0);
+    pte_t pte = user_pte_next(paddr, false, PTE_NONE, 0, VMReadWrite);
 
     cap = cap_page_table_cap_set_capPTIsMapped(cap, 1);
     cap = cap_page_table_cap_set_capPTMappedASID(cap, asid);
@@ -939,12 +950,12 @@ static exception_t decodeLOONGARCHFrameInvocation(word_t label, word_t length,
         }
 
         word_t vaddr = getSyscallArg(0, buffer);
-        // word_t w_rightsMask = getSyscallArg(1, buffer);
-        // vm_attributes_t attr = vmAttributesFromWord(getSyscallArg(2, buffer));
+        word_t w_rightsMask = getSyscallArg(1, buffer);
+        vm_attributes_t attr = vmAttributesFromWord(getSyscallArg(2, buffer));
         cap_t lvl1ptCap = current_extra_caps.excaprefs[0]->cap;
 
         vm_page_size_t frameSize = cap_frame_cap_get_capFSize(cap);
-        // vm_rights_t capVMRights = cap_frame_cap_get_capFVMRights(cap);
+        vm_rights_t capVMRights = cap_frame_cap_get_capFVMRights(cap);
 
         if (unlikely(cap_get_capType(lvl1ptCap) != cap_page_table_cap ||
                      !cap_page_table_cap_get_capPTIsMapped(lvl1ptCap))) {
@@ -1026,16 +1037,18 @@ static exception_t decodeLOONGARCHFrameInvocation(word_t label, word_t length,
             }
         }
 
-        // vm_rights_t vmRights = maskVMRights(capVMRights, rightsFromWord(w_rightsMask));
+        vm_rights_t vmRights = maskVMRights(capVMRights, rightsFromWord(w_rightsMask));
         paddr_t frame_paddr = addrFromPPtr((void *) cap_frame_cap_get_capFBasePtr(cap));
         cap = cap_frame_cap_set_capFMappedASID(cap, asid);
         cap = cap_frame_cap_set_capFMappedAddress(cap,  vaddr);
         
-        bool_t isDevice = cap_frame_cap_get_capFIsDevice(cap);
-        pte_t pte = makeUserPTE(frame_paddr, isDevice/*, executable, vmRights*/);
+        // bool_t isDevice = cap_frame_cap_get_capFIsDevice(cap);
+        // pte_t pte = makeUserPTE(frame_paddr, isDevice/*, executable, vmRights*/);
         // bool_t executable = !vm_attributes_get_riscvExecuteNever(attr);
 
         // pte_t pte = makeUserPTE(frame_paddr, executable, vmRights);
+        bool_t cacheable = vm_attributes_get_loongarchPageCacheable(attr);
+        pte_t pte = makeUserPTE(frame_paddr, cacheable, vmRights);
         
         setThreadState(NODE_STATE(ksCurThread), ThreadState_Restart);
         return performPageInvocationMapPTE(cap, cte, pte, lu_ret.ptSlot);

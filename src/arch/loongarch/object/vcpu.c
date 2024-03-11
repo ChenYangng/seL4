@@ -236,6 +236,67 @@ exception_t invokeVCPUSetTCB(vcpu_t *vcpu, tcb_t *tcb)
     return EXCEPTION_NONE;
 }
 
+exception_t invokeVCPUInjectIRQ(vcpu_t *vcpu, word_t virq)
+{
+    // word_t gestat = 0x0;
+    // word_t reg = 0x5;
+    // printf("invokeVCPUInjectIRQ, virq = %ld\n", virq);
+
+    // asm volatile("parse_r __reg, %[gestat]	\n"
+    //            ".word 0x5 << 24 | %[reg] << 10 | 0 << 5 | __reg	\n"
+    //            : [gestat] "+r"(gestat)
+    //            : [reg] "i"(reg)
+    //            : "memory");
+    // printf("read gestat: 0x%lx\n", gestat);
+    // gestat |= 1 << (2 + virq - 1);
+    // printf("gestat write: 0x%lx\n", gestat);
+
+    
+    word_t reg = 0x52;
+    word_t val = csr_readl(reg);
+    // printf("read gintctl 0x%lx\n", val);
+    if (virq == 0) {
+        val &= ~(1 << 1);
+    } else {
+        val |= 1 << (virq - 1);
+    }
+    csr_writel(val, reg);
+    // printf("write gintctl 0x%lx\n", val);
+    // word_t val = 1 << (virq - 1);
+    // word_t mask = 0xff; 
+    // csr_xchgl(val, mask, reg);
+    // asm volatile("parse_r __reg, %[gestat]	\n"
+    //            ".word 0x5 << 24 | %[reg] << 10 | 1 << 5 | __reg	\n"
+    //            : [gestat] "+r"(gestat)
+    //            : [reg] "i"(reg)
+    //            : "memory");
+    return EXCEPTION_NONE;
+}
+
+exception_t decodeVCPUInjectIRQ(cap_t cap, word_t *buffer)
+{
+    vcpu_t *vcpu;
+    word_t virq;
+    word_t mr0;
+
+    vcpu = VCPU_PTR(cap_vcpu_cap_get_capVCPUPtr(cap));
+
+    mr0 = getSyscallArg(0, buffer);
+    virq = mr0 & 0xffff;
+
+    // printf("decodeVCPUInjectIRQ...\n");
+    
+    if (virq < 0 || virq > 7) {
+        current_syscall_error.type = seL4_RangeError;
+        current_syscall_error.rangeErrorMin = 0;
+        current_syscall_error.rangeErrorMax = 7;
+        return EXCEPTION_SYSCALL_ERROR;
+    }
+
+    setThreadState(NODE_STATE(ksCurThread), ThreadState_Restart);
+    return invokeVCPUInjectIRQ(vcpu, virq);
+}
+
 exception_t decodeLOONGARCHVCPUInvocation(
     word_t label,
     unsigned int length,
@@ -253,8 +314,8 @@ exception_t decodeLOONGARCHVCPUInvocation(
         return decodeVCPUReadReg(cap, length, call, buffer);
     case LOONGARCHVCPUWriteReg:
         return decodeVCPUWriteReg(cap, length, buffer);
-    // case LOONGARCHVCPUInjectIRQ:
-    //     return decodeVCPUInjectIRQ(cap, length, buffer);
+    case LOONGARCHVCPUInjectIRQ:
+        return decodeVCPUInjectIRQ(cap, buffer);
     // case LOONGARCHVCPUAckVPPI:
     //     return decodeVCPUAckVPPI(cap, length, buffer);
     default:
